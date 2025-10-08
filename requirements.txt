@@ -1,0 +1,6 @@
+pandas
+openpyxl
+beautifulsoup4
+requests
+tkintertable
+pytest
