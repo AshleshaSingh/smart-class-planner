@@ -52,7 +52,7 @@ The software follows a **layered architecture** for modularity, scalability, and
 
 ---
 
-## 💻 System Requirements
+## System Requirements
 
 | Requirement       | Minimum                                                          |
 | ----------------- | ---------------------------------------------------------------- |
