@@ -117,8 +117,9 @@ smart-class-planner/
 │   ├── test_plan_generator.py
 │   └── test_validator.py
 │
-├── check_env.py                        # Environment verification script
-├── requirements.txt
+├── setup_validator.py                 # Unified environment + module checker
+├── requirements.txt                   # Verified dependency list
+├── venv/
 ├── .gitignore
 └── README.md
 ```
@@ -160,14 +161,15 @@ pip install -r requirements.txt
 Run the included diagnostic script:
 
 ```bash
-python check_env.py
+python setup_validator.py
 ```
 
-You should see all green checkmarks confirming:
+This script checks:
 
-* Python 3.12+
-* Tkinter GUI works
-* pandas, openpyxl, requests, and BeautifulSoup4 installed
+* Python version (3.12 recommended)
+* Tkinter GUI availability
+* All required libraries
+* Successful import of all modules
 
 ---
 
@@ -244,8 +246,7 @@ tests/test_repository.py .....
 
 You’re fully set when:
 
-1. `python --version` → 3.12.x
-2. `python -m tkinter` opens a blank window
-3. `python check_env.py` passes all checks
-4. `python -m smart_class_planner.main` launches the GUI
+1. python setup_validator.py → passes all checks
+2. python -m smart_class_planner.main → launches the GUI
+3. Excel plan is generated successfully
 
