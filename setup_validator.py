@@ -22,18 +22,37 @@ Usage:
 import sys
 import os
 import importlib
+import importlib.util
 import traceback
 
 
 def check_python_version():
+    """
+    Checks the installed Python version for compatibility.
+    Accepts Python 3.12–3.14 as valid, warns if outside this range.
+    """
+    import sys
+
     print("Checking Python version...")
     version = sys.version.split()[0]
     print(f"   Detected Python {version}")
-    if not version.startswith("3.12"):
-        print("   Recommended: Python 3.12.x (with Tkinter support)\n")
+
+    try:
+        major, minor, *_ = map(int, version.split("."))
+    except ValueError:
+        print("   Unable to parse Python version.\n")
         return False
-    print("   Python version is correct.\n")
-    return True
+
+    if major == 3 and 12 <= minor <= 14:
+        print("   Python version is compatible (3.12–3.14).\n")
+        return True
+    elif major == 3 and minor < 12:
+        print("   Older Python version detected. Please upgrade to 3.12+.\n")
+        return False
+    else:
+        print("   Newer Python version detected; should work, but not fully tested.\n")
+        return True
+
 
 
 def check_tkinter():
@@ -53,30 +72,49 @@ def check_tkinter():
 
 
 def check_dependencies():
+    """
+    Cross-checks installed packages (via pip list) against requirements.txt.
+    This avoids importlib issues on Python 3.14+ and handles alias names.
+    """
+    import subprocess
+
     print("Checking dependencies (requirements.txt)...")
-    req_path = "requirements.txt"
+
+    # Get a clean list of installed packages from pip
+    result = subprocess.run(
+        ["pip", "list", "--format=freeze"],
+        capture_output=True,
+        text=True
+    )
+    installed_lines = result.stdout.splitlines()
+    installed_pkgs = {line.split("==")[0].lower() for line in installed_lines}
+
     missing = []
-    if not os.path.exists(req_path):
-        print("   No requirements.txt found. Skipping dependency check.\n")
+    with open("requirements.txt") as reqs:
+        for line in reqs:
+            pkg = line.strip().split("==")[0].lower()
+            if not pkg or pkg.startswith("#"):
+                continue
+
+            # map known aliases (import name != package name)
+            alias_map = {
+                "beautifulsoup4": "bs4",
+                "pypdf2": "pypdf2",
+            }
+            alias = alias_map.get(pkg, pkg)
+
+            if pkg in installed_pkgs or alias in installed_pkgs:
+                print(f"   {pkg} is installed.")
+            else:
+                print(f"   Missing dependency: {pkg}")
+                missing.append(pkg)
+
+    if not missing:
+        print("All dependencies verified.\n")
         return True
-
-    with open(req_path, "r") as req_file:
-        required_libs = [
-            line.strip().split("==")[0]
-            for line in req_file
-            if line.strip() and not line.startswith("#")
-        ]
-
-    for lib in required_libs:
-        if importlib.util.find_spec(lib) is None:
-            missing.append(lib)
-            print(f"   Missing dependency: {lib}")
-        else:
-            print(f"   {lib} is installed.")
-
-    print()
-    return len(missing) == 0
-
+    else:
+        print(f"Missing {len(missing)} dependencies: {', '.join(missing)}\n")
+        return False
 
 def check_all_modules():
     print("Checking all project modules under smart_class_planner/...")
