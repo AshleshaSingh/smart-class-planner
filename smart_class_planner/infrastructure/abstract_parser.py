@@ -1,8 +1,7 @@
 """
 File: abstract_parser.py
 Author: Ashlesha Singh
-Version: 1.0
-Date: 2025-10-07
+Date: 2025-10-08
 Description:
     Defines a common interface for all parsers and web scrapers
     used in the Smart Class Planning Tool. This supports a

@@ -1,7 +1,7 @@
 """
 File: program_map_scraper.py
-Version: 1.0
-Date: 2025-10-15
+Author: Ashlesha Singh
+Date: 2025-10-11
 Description:
     Scrapes program map for term-specific course offerings (P4 in DFD).
     Fallback: Parses local 4-Year Schedule Excel.

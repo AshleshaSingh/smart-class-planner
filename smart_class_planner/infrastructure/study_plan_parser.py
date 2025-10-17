@@ -1,6 +1,6 @@
 """
 File: study_plan_parser.py
-Version: 3.4
+Author: Ashlesha Singh
 Date: 2025-10-15
 Description:
     Robust parser for Graduate Study Plan spreadsheets (P3 in DFD).
@@ -34,7 +34,7 @@ class StudyPlanParser(AbstractParser):
         elif any("four-year" in c for c in cols_lower):
             return self._parse_four_year_schedule(file_path)
         else:
-            print(f"⚠️ Unknown structure in {os.path.basename(file_path)}")
+            print(f"Unknown structure in {os.path.basename(file_path)}")
             print("Detected columns:", df.columns.tolist())
             return {}
 
@@ -69,13 +69,17 @@ class StudyPlanParser(AbstractParser):
             if not code or code.lower() in ("nan", "none", "prerequisite", ""):
                 continue
 
+            # Filter for core tracks only (ACS, CYBR); ignore electives/non-CS
+            if required and not any(track in required for track in ["ACS", "CYBR"]):
+                continue
+
             structured.setdefault(semester or "Unknown", []).append({
                 "code": code,
                 "title": title,
                 "required_in": required
             })
 
-        print(f"Extracted {sum(len(v) for v in structured.values())} courses across {len(structured)} semesters.")
+        print(f"Extracted {sum(len(v) for v in structured.values())} core courses across {len(structured)} semesters.")
         return structured
 
     # ----------------------------------------------------------------------
@@ -83,6 +87,7 @@ class StudyPlanParser(AbstractParser):
         """
         Parses 4-Year Schedule Excel to extract term offerings (D3 in DFD).
         Returns {term: [{"code": "CPSC 6109", "title": "...", "offering_type": "D,N,O"}, ...]}
+        Filters for CPSC/CYBR core courses only.
         """
         print("Detected: 4-Year Schedule (Parsing term offerings)")
         df = pd.read_excel(file_path, header=2, sheet_name='Sheet1')  # Skip intro rows
@@ -99,6 +104,9 @@ class StudyPlanParser(AbstractParser):
             code = str(row['Course']).strip()
             if pd.isna(row['Course']) or not code:
                 continue
+            # Filter for CPSC/CYBR core only
+            if not (code.startswith("CPSC") or code.startswith("CYBR")):
+                continue
             title = str(row['Course Title']).strip()
             for term in term_cols:
                 offering = str(row[term]).strip()
@@ -110,5 +118,5 @@ class StudyPlanParser(AbstractParser):
                     })
 
         total_offerings = sum(len(v) for v in structured.values())
-        print(f"Extracted {total_offerings} course offerings across {len(term_cols)} terms.")
+        print(f"Extracted {total_offerings} core course offerings across {len(term_cols)} terms.")
         return structured
