@@ -154,34 +154,53 @@ class ExcelExporter:
     def _extract_plan_data(self, plan_obj: Any) -> Dict:
         """
         Extract data from plan object.
-        
+
         Args:
             plan_obj: Plan object from application layer
-            
+
         Returns:
             Dictionary with structured data
         """
         courses = []
-        
+
         # Try to extract from common plan object structures
         try:
-            if hasattr(plan_obj, 'semesters'):
+            # Handle list of SemesterPlan objects (from plan_generator.py)
+            if isinstance(plan_obj, list):
+                for semester in plan_obj:
+                    # Check if it's a SemesterPlan object
+                    if hasattr(semester, 'courses') and hasattr(semester, 'get_term_key'):
+                        for course in semester.courses:
+                            courses.append({
+                                'semester': semester.get_term_key(),
+                                'course_code': course.code,
+                                'course_name': course.title,
+                                'credits': course.credits,
+                                'prerequisites': '',
+                                'status': 'Planned'
+                            })
+            # Handle objects with semesters attribute
+            elif hasattr(plan_obj, 'semesters'):
                 for semester in plan_obj.semesters:
                     for course in semester.courses:
+                        semester_name = semester.name if hasattr(semester, 'name') else semester.get_term_key()
+                        course_name = course.name if hasattr(course, 'name') else course.title
                         courses.append({
-                            'semester': semester.name,
+                            'semester': semester_name,
                             'course_code': course.code,
-                            'course_name': course.name,
+                            'course_name': course_name,
                             'credits': course.credits,
                             'prerequisites': getattr(course, 'prerequisites', ''),
                             'status': getattr(course, 'status', 'Planned')
                         })
+            # Handle objects with courses attribute
             elif hasattr(plan_obj, 'courses'):
                 for course in plan_obj.courses:
+                    course_name = course.name if hasattr(course, 'name') else course.title
                     courses.append({
                         'semester': getattr(course, 'semester', 'TBD'),
                         'course_code': course.code,
-                        'course_name': course.name,
+                        'course_name': course_name,
                         'credits': course.credits,
                         'prerequisites': getattr(course, 'prerequisites', ''),
                         'status': getattr(course, 'status', 'Planned')
@@ -189,7 +208,11 @@ class ExcelExporter:
         except Exception:
             # Fallback to string conversion
             return self._parse_text_plan(str(plan_obj))
-        
+
+        # If no courses extracted, try parsing as text
+        if not courses:
+            return self._parse_text_plan(str(plan_obj))
+
         return {
             'courses': courses,
             'total_credits': sum(c['credits'] for c in courses),
