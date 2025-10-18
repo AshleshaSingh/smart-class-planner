@@ -609,15 +609,61 @@ Ready to plan your academic future? Let's get started! 🚀
         self.results_text.config(state=tk.NORMAL)
         self.results_text.delete("1.0", tk.END)
 
-        if isinstance(plan, str):
+        # Handle list of SemesterPlan objects
+        if isinstance(plan, list):
+            header = """
+╔══════════════════════════════════════════════════════════════════════════╗
+║                    GENERATED COURSE PLAN                                 ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+"""
+            self.results_text.insert(tk.END, header, "header")
+
+            total_credits = 0
+            for semester in plan:
+                # Display semester header
+                if hasattr(semester, 'get_term_key'):
+                    self.results_text.insert(tk.END, f"\n{semester.get_term_key()}\n", "semester")
+                    self.results_text.insert(tk.END, f"{'='*40}\n", "semester")
+
+                # Display courses
+                if hasattr(semester, 'courses'):
+                    for course in semester.courses:
+                        course_line = f"  • {course.code} - {course.title} ({course.credits} credits)\n"
+                        self.results_text.insert(tk.END, course_line, "course")
+
+                    # Display semester total
+                    if hasattr(semester, 'total_credits'):
+                        total_credits += semester.total_credits
+                        self.results_text.insert(
+                            tk.END,
+                            f"\n  Semester Total: {semester.total_credits} credits\n",
+                            "course"
+                        )
+
+            # Display overall summary
+            summary = f"""
+
+{'─'*78}
+SUMMARY
+{'─'*78}
+Total Semesters: {len(plan)}
+Total Credits: {total_credits}
+Average Credits per Semester: {total_credits/len(plan) if plan else 0:.1f}
+"""
+            self.results_text.insert(tk.END, summary, "header")
+
+        elif isinstance(plan, str):
             self.results_text.insert("1.0", plan)
         elif hasattr(plan, "semesters"):
             for semester in plan.semesters:
-                self.results_text.insert(tk.END, f"\n{semester.name}\n", "semester")
+                semester_name = semester.name if hasattr(semester, 'name') else str(semester)
+                self.results_text.insert(tk.END, f"\n{semester_name}\n", "semester")
                 for course in semester.courses:
+                    course_name = course.name if hasattr(course, 'name') else course.title
                     self.results_text.insert(
                         tk.END,
-                        f"  {course.code} - {course.name} ({course.credits} credits)\n",
+                        f"  {course.code} - {course_name} ({course.credits} credits)\n",
                         "course",
                     )
         else:
@@ -628,10 +674,10 @@ Ready to plan your academic future? Let's get started! 🚀
     def export_to_excel(self):
         """
         Export results to Excel file.
-        Integrates with infrastructure/excel_exporter.py
+        Integrates with excel_exporter.py
         """
         # Check if results exist
-        if not self.generated_plan or not hasattr(self, 'generated_plan'):
+        if not self.generated_plan:
             messagebox.showwarning(
                 "No Plan Available",
                 "Please generate a course plan before exporting.\n\n"
@@ -641,20 +687,23 @@ Ready to plan your academic future? Let's get started! 🚀
                 "3. Then export the results"
             )
             return
-        
+
         # Get save location
+        initial_filename = "course_plan.xlsx"
+        if self.degreeworks_pdf:
+            initial_filename = f"course_plan_{Path(self.degreeworks_pdf).stem}.xlsx"
+
         file_path = filedialog.asksaveasfilename(
             title="Save Course Plan",
             defaultextension=".xlsx",
             filetypes=[("Excel Files", "*.xlsx"), ("All Files", "*.*")],
-            initialfile=f"course_plan_{Path(self.degreeworks_pdf).stem}.xlsx"
+            initialfile=initial_filename
         )
-        
+
         if not file_path:
             return
-        
+
         try:
-            # TODO: Integrate with excel_exporter
             from smart_class_planner.presentation.excel_exporter import ExcelExporter
 
             exporter = ExcelExporter()
@@ -665,6 +714,7 @@ Ready to plan your academic future? Let's get started! 🚀
                 "schedule_file": Path(self.schedule_excel).name if self.schedule_excel else "N/A"
             }
 
+            # Export the plan (ExcelExporter now handles SemesterPlan objects)
             exporter.export_plan(self.generated_plan, file_path, metadata)
 
             messagebox.showinfo(
@@ -674,11 +724,12 @@ Ready to plan your academic future? Let's get started! 🚀
                 f"Location: {Path(file_path).parent}\n\n"
                 f"The Excel file contains:\n"
                 f"  • Course Plan (detailed semester schedule)\n"
-                f"  • Summary (program overview)\n"
+                f"  • Semester Summary (credits per term)\n"
+                f"  • Program Summary (overall statistics)\n"
                 f"  • Metadata (generation details)\n\n"
                 f"You can now share this file with your academic advisor."
             )
-            
+
         except Exception as e:
             messagebox.showerror(
                 "Export Error",

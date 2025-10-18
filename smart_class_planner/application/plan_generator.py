@@ -315,3 +315,23 @@ class PlanGenerator:
             }
             for sem in self.generated_plan
         ]
+
+    def export_to_course_list(self) -> List[Dict]:
+        """
+        Export the plan as a flat list of courses (for ExcelExporter compatibility)
+
+        Returns:
+            List[Dict]: List of courses with semester, code, name, credits, status
+        """
+        courses = []
+        for sem in self.generated_plan:
+            for course in sem.courses:
+                courses.append({
+                    'semester': sem.get_term_key(),
+                    'course_code': course.code,
+                    'course_name': course.title,
+                    'credits': course.credits,
+                    'prerequisites': '', # Could be enhanced to show prereqs
+                    'status': 'Planned'
+                })
+        return courses
