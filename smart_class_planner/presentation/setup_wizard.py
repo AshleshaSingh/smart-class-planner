@@ -289,13 +289,14 @@ STEP 4: Export to Excel for advising appointments
             text="📂 Browse Files",
             command=command,
             bg=self.primary_color,
-            fg="white",
+            fg= "white",
             font=("Arial", 10, "bold"),
             relief=tk.FLAT,
             padx=25,
             pady=10,
             cursor="hand2",
-            activebackground="#1e3a8a"
+            activebackground="#5e7dd3",
+            activeforeground= "white"
         )
         browse_btn.pack(side=tk.LEFT)
         
@@ -426,7 +427,8 @@ Ready to plan your academic future? Let's get started! 🚀
             padx=40,
             pady=15,
             cursor="hand2",
-            activebackground="#047857"
+            activebackground="#047857",
+            activeforeground="white"
         )
         generate_btn.pack(side=tk.LEFT, padx=8)
         
@@ -442,7 +444,8 @@ Ready to plan your academic future? Let's get started! 🚀
             padx=28,
             pady=15,
             cursor="hand2",
-            activebackground="#1e3a8a"
+            activebackground="#5e7dd3",
+            activeforeground="white"
         )
         export_btn.pack(side=tk.LEFT, padx=8)
         
@@ -458,7 +461,8 @@ Ready to plan your academic future? Let's get started! 🚀
             padx=28,
             pady=15,
             cursor="hand2",
-            activebackground="#475569"
+            activebackground="#475569",
+            activeforeground="white"
         )
         clear_btn.pack(side=tk.LEFT, padx=8)
 
