@@ -762,6 +762,31 @@ Ready to plan your academic future? Let's get started! 🚀
 
         # Handle list of SemesterPlan objects
         if isinstance(plan, list):
+            # Check if the plan is empty (no remaining courses)
+            if len(plan) == 0:
+                congratulations_message = """
+╔══════════════════════════════════════════════════════════════════════════╗
+║                        CONGRATULATIONS!                                  ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+🎓 Excellent news!
+
+You have no remaining courses after this semester!
+
+You are on track to graduate at the end of your current semester.
+
+Next Steps:
+  • Verify with your academic advisor that all requirements are met
+  • Apply for graduation through your university portal
+  • Attend commencement ceremonies
+
+Best wishes!
+
+"""
+                self.results_text.insert(tk.END, congratulations_message, "header")
+                self.results_text.config(state=tk.DISABLED)
+                return
+
             header = """
 ╔══════════════════════════════════════════════════════════════════════════╗
 ║                    GENERATED COURSE PLAN                                 ║
@@ -847,6 +872,18 @@ Average Credits per Semester: {total_credits/len(plan) if plan else 0:.1f}
                 "1. Upload all required files\n"
                 "2. Click 'Generate Course Plan'\n"
                 "3. Then export the results"
+            )
+            return
+
+        # Check if plan is empty (no remaining courses)
+        if isinstance(self.generated_plan, list) and len(self.generated_plan) == 0:
+            messagebox.showinfo(
+                "Congratulations!",
+                "🎓 Great news!\n\n"
+                "You have no remaining courses after this semester.\n\n"
+                "You are on track to graduate at the end of your current semester!\n\n"
+                "There is nothing to export. Please verify with your academic advisor "
+                "that all requirements are met and apply for graduation."
             )
             return
 
