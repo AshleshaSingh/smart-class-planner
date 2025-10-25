@@ -554,38 +554,189 @@ Ready to plan your academic future? Let's get started! 🚀
             self.notebook.select(0)  # Switch to setup tab
             return
         
-        # TODO: Integrate with application layer
-        from smart_class_planner.application.plan_generator import PlanGenerator
+        # Integrate with application layer
+        from smart_class_planner.application.planner import IntegratedPlanner
         from smart_class_planner.infrastructure.pdf_parser import PDFParser
         from smart_class_planner.infrastructure.study_plan_parser import StudyPlanParser
+        from smart_class_planner.domain.repository import Repository
+        from smart_class_planner.domain.course import Course
+        from smart_class_planner.domain.offering import Offering
+
         try:
-            # Parse DegreeWorks PDF
+            # Parse DegreeWorks PDF to get remaining courses
             pdf_parser = PDFParser()
-            completed_courses = pdf_parser.parse(self.degreeworks_pdf)
-            
-            # Parse Study Plan
+            remaining_from_degreeworks = pdf_parser.parse(self.degreeworks_pdf)
+
+            # Parse Study Plan to get required courses
             plan_parser = StudyPlanParser()
-            required_courses = plan_parser.parse(self.study_plan_excel)
-            
-            # Parse Course Schedule
-            schedule_parser = ScheduleParser()
-            course_offerings = schedule_parser.parse(self.schedule_excel)
-            
-            # Generate Plan
-            generator = PlanGenerator()
-            self.generated_plan = generator.generate(
-                completed_courses=completed_courses,
-                required_courses=required_courses,
-                course_offerings=course_offerings
+            required_courses_dict = plan_parser.parse(self.study_plan_excel)
+
+            # Parse Course Schedule to get when courses are offered
+            schedule_parser = StudyPlanParser()
+            course_offerings_dict = schedule_parser.parse(self.schedule_excel)
+
+            # Create Repository and populate it
+            repository = Repository()
+
+            # Add all courses from required courses (study plan)
+            for semester, courses in required_courses_dict.items():
+                for course_data in courses:
+                    course = Course(
+                        code=course_data['code'],
+                        title=course_data.get('title', ''),
+                        credits=3  # Default to 3 credits for graduate courses
+                    )
+                    repository.add_course(course)
+
+            # Add any courses from DegreeWorks that aren't in the study plan
+            for course_data in remaining_from_degreeworks:
+                if course_data['code'] not in repository.courses:
+                    course = Course(
+                        code=course_data['code'],
+                        title=course_data.get('title', ''),
+                        credits=3
+                    )
+                    repository.add_course(course)
+                    # print(f"DEBUG: Added missing course from DegreeWorks: {course_data['code']}")
+
+            # Add course offerings from schedule
+            for term, courses in course_offerings_dict.items():
+                # Parse term codes like "SP20", "FA21", "SU22"
+                import re
+                match = re.match(r'(SP|SU|FA)(\d{2})', term)
+                if match:
+                    term_code = match.group(1)
+                    year_suffix = match.group(2)
+
+                    # Map term codes to full names
+                    term_map = {'SP': 'Spring', 'SU': 'Summer', 'FA': 'Fall'}
+                    semester = term_map.get(term_code, term)
+
+                    # Convert 2-digit year to 4-digit (20 -> 2020, 25 -> 2025)
+                    year = 2000 + int(year_suffix)
+                else:
+                    # Fallback for other formats
+                    term_parts = term.split()
+                    if len(term_parts) >= 2:
+                        if term_parts[0].isdigit():
+                            year = int(term_parts[0])
+                            semester = term_parts[1]
+                        else:
+                            semester = term_parts[0]
+                            year = int(term_parts[1]) if term_parts[1].isdigit() else 2025
+                    else:
+                        semester = term
+                        year = 2025
+
+                for course_data in courses:
+                    offering = Offering(
+                        course_code=course_data['code'],
+                        term=semester,
+                        year=year
+                    )
+                    repository.add_offering(offering)
+
+            # The DegreeWorks parser returns REMAINING courses (Still Needed section)
+            # we use those directly as the courses to schedule
+            remaining_courses = [course['code'] for course in remaining_from_degreeworks]
+
+            # DEBUG: Check which courses have offerings
+            print("\nDEBUG: Checking offering data for remaining courses:")
+            for course_code in remaining_courses:
+                course_offerings = [o for o in repository.offerings if o.course_code == course_code]
+                if course_offerings:
+                    sample = course_offerings[:3]
+                    print(f"  {course_code}: {len(course_offerings)} offerings (e.g., {[(o.term, o.year) for o in sample]})")
+                else:
+                    print(f"  {course_code}: NO OFFERINGS FOUND")
+
+            # print(f"DEBUG: Repository has {len(repository.courses)} courses")
+            # print(f"DEBUG: Repository has {len(repository.offerings)} offerings")
+            # print(f"DEBUG: Planning for {len(remaining_courses)} remaining courses")
+            # print(f"DEBUG: Remaining courses: {remaining_courses[:5]}")
+            # print(f"DEBUG: Courses in repository: {list(repository.courses.keys())}")
+            # missing_from_repo = [c for c in remaining_courses if c not in repository.courses]
+            # print(f"DEBUG: Courses NOT in repository: {missing_from_repo}")
+            # print(f"DEBUG: Sample offerings: {[(o.course_code, o.term, o.year) for o in list(repository.offerings)[:5]]}")
+
+            # # Show debug info to user
+            # courses_in_repo = ', '.join(list(repository.courses.keys())[:10])
+            # courses_needed = ', '.join(remaining_courses[:10])
+
+            # # Check which courses are NOT in repository
+            # missing_from_repo = [c for c in remaining_courses if c not in repository.courses]
+
+            # # Sample offerings
+            # sample_offerings = []
+            # for offering in list(repository.offerings)[:5]:
+            #     sample_offerings.append(f"{offering.course_code} in {offering.term} {offering.year}")
+
+            # debug_info = (
+            #     f"Debug Information:\n\n"
+            #     f"DegreeWorks: {len(remaining_from_degreeworks)} remaining courses found\n"
+            #     f"Study Plan: {len(required_courses_dict)} semesters parsed\n"
+            #     f"Course Schedule: {len(course_offerings_dict)} terms parsed\n\n"
+            #     f"Repository:\n"
+            #     f"  • {len(repository.courses)} courses\n"
+            #     f"  • {len(repository.offerings)} offerings\n"
+            #     f"  • Courses in repo: {courses_in_repo}\n"
+            #     f"  • Courses needed: {courses_needed}\n"
+            #     f"  • NOT in repo: {missing_from_repo}\n\n"
+            #     f"Sample offerings:\n"
+            #     f"  {chr(10).join(sample_offerings)}\n\n"
+            #     f"Click OK to continue with plan generation."
+            # )
+            # messagebox.showinfo("Debug Information", debug_info)
+
+            # Generate Plan using IntegratedPlanner
+            # Start planning from the NEXT semester since current semester is in progress
+            import datetime
+            current_date = datetime.datetime.now()
+            current_month = current_date.month
+            current_year = current_date.year
+
+            # Determine next semester based on current month
+            # Fall: Aug-Dec (months 8-12) -> Next is Spring
+            # Spring: Jan-May (months 1-5) -> Next is Summer
+            # Summer: Jun-Jul (months 6-7) -> Next is Fall
+            if 8 <= current_month <= 12:  # Currently Fall
+                start_term = "Spring"
+                start_year = current_year + 1
+            elif 1 <= current_month <= 5:  # Currently Spring
+                start_term = "Summer"
+                start_year = current_year
+            else:  # Currently Summer (6-7)
+                start_term = "Fall"
+                start_year = current_year
+
+            planner = IntegratedPlanner(repository)
+            self.generated_plan, validation = planner.create_validated_plan(
+                remaining_courses=remaining_courses,
+                start_term=start_term,
+                start_year=start_year,
+                max_credits_per_term=9
             )
-            
+
+            # Store repository reference for display
+            self.repository = repository
+
             # Display results
             self._display_plan_results(self.generated_plan)
-            
+
+            # Show validation warnings/errors if any
+            if not validation.is_valid:
+                warning_msg = "Plan generated with some issues:\n\n"
+                if validation.errors:
+                    warning_msg += "Errors:\n" + "\n".join(f"• {e}" for e in validation.errors[:5])
+                if validation.warnings:
+                    warning_msg += "\n\nWarnings:\n" + "\n".join(f"• {w}" for w in validation.warnings[:5])
+                messagebox.showwarning("Validation Issues", warning_msg)
+
         except Exception as e:
+            import traceback
             messagebox.showerror(
                 "Generation Error",
-                f"Failed to generate course plan:\n\n{str(e)}"
+                f"Failed to generate course plan:\n\n{str(e)}\n\nDetails:\n{traceback.format_exc()}"
             )
             return
         
@@ -629,7 +780,18 @@ Ready to plan your academic future? Let's get started! 🚀
                 # Display courses
                 if hasattr(semester, 'courses'):
                     for course in semester.courses:
-                        course_line = f"  • {course.code} - {course.title} ({course.credits} credits)\n"
+                        # Check if this course has offering data in the repository
+                        has_offerings = False
+                        if hasattr(self, 'repository') and self.repository:
+                            has_offerings = any(o.course_code == course.code for o in self.repository.offerings)
+
+                        course_line = f"  • {course.code} - {course.title} ({course.credits} credits)"
+
+                        # Add warning if no offering data exists
+                        if not has_offerings:
+                            course_line += " [⚠ Offering schedule not available - verify with advisor]"
+
+                        course_line += "\n"
                         self.results_text.insert(tk.END, course_line, "course")
 
                     # Display semester total

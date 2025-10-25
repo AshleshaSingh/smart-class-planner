@@ -41,22 +41,40 @@ class PDFParser(AbstractParser):
         for page in reader.pages:
             text += page.extract_text() + "\n"
 
-        # Pattern match for course lines (e.g., "CPSC 6109 - Algorithms Analysis and Design")
-        # Focus on remaining required section based on DegreeWorks structure
+        # Extract courses marked as "Still needed"
+        import re
         courses = []
         lines = text.splitlines()
-        in_remaining_section = False  # Toggle based on section headers like "Still Needed"
+
         for line in lines:
             line = line.strip()
-            if "Still Needed" in line or "Remaining Requirements" in line:
-                in_remaining_section = True
-                continue
-            if in_remaining_section and (line.startswith("CPSC") or "CPSC " in line):
-                parts = line.split(" - ", 1)
-                if len(parts) == 2:
-                    code = parts[0].strip()
-                    title = parts[1].strip()
+            # Look for lines with "Still needed:" followed by course codes
+            if "Still needed:" in line:
+                # Extract CPSC/CYBR course codes from this line
+                course_codes = re.findall(r'(CPSC|CYBR)\s*(\d{4})', line) # Pattern: "Still needed: 1 Class in CPSC 6119" or "Still needed: 6 Credits in CPSC 6985 or..."
+                for prefix, number in course_codes:
+                    code = f"{prefix} {number}"
+                    title = self._find_course_title(text, code) # Try to find the title from earlier in the document
                     courses.append({"code": code, "title": title})
+                    # print(f"DEBUG PDF: Found still-needed course: {code}")
 
-        print(f"Extracted {len(courses)} remaining courses from DegreeWorks.")
-        return courses
+        # Remove duplicates
+        seen = set()
+        unique_courses = []
+        for course in courses:
+            if course['code'] not in seen:
+                seen.add(course['code'])
+                unique_courses.append(course)
+
+        print(f"Extracted {len(unique_courses)} remaining courses from DegreeWorks.")
+        return unique_courses
+
+    def _find_course_title(self, text: str, course_code: str) -> str:
+        """Try to find the course title in the PDF text."""
+        import re
+        # Look for patterns like "CPSC 6119- Object-Oriented Development"
+        pattern = re.escape(course_code) + r'[-\s]*([A-Za-z][\w\s,&\-]+?)(?:\n|Still|Grade|Credits|$)'
+        match = re.search(pattern, text)
+        if match:
+            return match.group(1).strip()
+        return ""
