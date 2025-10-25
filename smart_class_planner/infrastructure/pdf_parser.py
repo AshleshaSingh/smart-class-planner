@@ -50,6 +50,13 @@ class PDFParser(AbstractParser):
             line = line.strip()
             # Look for lines with "Still needed:" followed by course codes
             if "Still needed:" in line:
+                # Split at "Except" to exclude courses that don't count
+                # Example: "Still needed: 6 Credits in CPSC 6985 or ... Except CPSC 6103 or ..."
+                # We only want the part BEFORE "Except"
+                if "Except" in line or "except" in line:
+                    # Case-insensitive split at "Except"
+                    line = re.split(r'\s+[Ee]xcept\s+', line)[0]
+
                 # Extract CPSC/CYBR course codes from this line
                 course_codes = re.findall(r'(CPSC|CYBR)\s*(\d{4})', line) # Pattern: "Still needed: 1 Class in CPSC 6119" or "Still needed: 6 Credits in CPSC 6985 or..."
                 for prefix, number in course_codes:
