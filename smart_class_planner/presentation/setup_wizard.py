@@ -863,8 +863,8 @@ Average Credits per Semester: {total_credits/len(plan) if plan else 0:.1f}
         Export results to Excel file.
         Integrates with excel_exporter.py
         """
-        # Check if results exist
-        if not self.generated_plan:
+        # Check if plan was never generated (None vs empty list [])
+        if self.generated_plan is None:
             messagebox.showwarning(
                 "No Plan Available",
                 "Please generate a course plan before exporting.\n\n"
