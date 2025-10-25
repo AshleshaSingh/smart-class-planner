@@ -47,7 +47,7 @@ class SetupWizard:
         self._setup_ui()
 
     def _setup_ui(self):
-        """Initialize the complete UI layout."""
+        """Initialize the complete layout."""
         self._create_header()
         self._create_main_content()
         self._create_footer()
@@ -62,7 +62,7 @@ class SetupWizard:
         title_label = tk.Label(
             header_frame,
             text="🎓 Smart Class Planning Tool",
-            font=("Segoe UI", 26, "bold"),
+            font=("Arial", 26, "bold"),
             bg=self.primary_color,
             fg="white"
         )
@@ -72,7 +72,7 @@ class SetupWizard:
         subtitle_label = tk.Label(
             header_frame,
             text="Automated Course Planning • Prerequisite Validation • Semester Scheduling",
-            font=("Segoe UI", 10),
+            font=("Arial", 10),
             bg=self.primary_color,
             fg="#93c5fd"
         )
@@ -86,7 +86,7 @@ class SetupWizard:
         style.configure('TNotebook', background=self.bg_color, borderwidth=0)
         style.configure('TNotebook.Tab', 
                        padding=[20, 12], 
-                       font=('Segoe UI', 10, 'bold'),
+                       font=('Arial', 10, 'bold'),
                        background='#e2e8f0')
         style.map('TNotebook.Tab',
                  background=[('selected', 'white')],
@@ -187,7 +187,7 @@ class SetupWizard:
         header_label = tk.Label(
             header_frame,
             text="📌 How This Tool Works",
-            font=("Segoe UI", 12, "bold"),
+            font=("Arial", 12, "bold"),
             bg="#eff6ff",
             fg=self.primary_color,
             anchor="w",
@@ -215,7 +215,7 @@ STEP 4: Export to Excel for advising appointments
         instructions_label = tk.Label(
             info_frame,
             text=instructions_text,
-            font=("Segoe UI", 9),
+            font=("Arial", 9),
             bg="white",
             fg="#334155",
             justify=tk.LEFT,
@@ -243,7 +243,7 @@ STEP 4: Export to Excel for advising appointments
         title_label = tk.Label(
             header_frame,
             text=title_text,
-            font=("Segoe UI", 12, "bold"),
+            font=("Arial", 12, "bold"),
             bg="white",
             fg="#1e293b",
             anchor="w"
@@ -254,7 +254,7 @@ STEP 4: Export to Excel for advising appointments
             req_badge = tk.Label(
                 header_frame,
                 text="REQUIRED",
-                font=("Segoe UI", 7, "bold"),
+                font=("Arial", 7, "bold"),
                 bg="#fee2e2",
                 fg="#991b1b",
                 padx=8,
@@ -266,7 +266,7 @@ STEP 4: Export to Excel for advising appointments
         desc_label = tk.Label(
             content,
             text=description,
-            font=("Segoe UI", 9),
+            font=("Arial", 9),
             bg="white",
             fg=self.secondary_color,
             anchor="w",
@@ -290,7 +290,7 @@ STEP 4: Export to Excel for advising appointments
             command=command,
             bg=self.primary_color,
             fg="white",
-            font=("Segoe UI", 10, "bold"),
+            font=("Arial", 10, "bold"),
             relief=tk.FLAT,
             padx=25,
             pady=10,
@@ -303,7 +303,7 @@ STEP 4: Export to Excel for advising appointments
         status_label = tk.Label(
             action_frame,
             text="⭕ No file selected",
-            font=("Segoe UI", 9),
+            font=("Arial", 9),
             bg="white",
             fg=self.secondary_color
         )
@@ -324,7 +324,7 @@ STEP 4: Export to Excel for advising appointments
         header_label = tk.Label(
             header_frame,
             text="📋 Your Personalized Course Plan",
-            font=("Segoe UI", 16, "bold"),
+            font=("Arial", 16, "bold"),
             bg=self.bg_color,
             fg="#1e293b"
         )
@@ -421,7 +421,7 @@ Ready to plan your academic future? Let's get started! 🚀
             command=self.generate_plan,
             bg=self.success_color,
             fg="white",
-            font=("Segoe UI", 13, "bold"),
+            font=("Arial", 13),
             relief=tk.FLAT,
             padx=40,
             pady=15,
@@ -437,7 +437,7 @@ Ready to plan your academic future? Let's get started! 🚀
             command=self.export_to_excel,
             bg=self.primary_color,
             fg="white",
-            font=("Segoe UI", 11),
+            font=("Arial", 11),
             relief=tk.FLAT,
             padx=28,
             pady=15,
@@ -453,7 +453,7 @@ Ready to plan your academic future? Let's get started! 🚀
             command=self.clear_all_data,
             bg=self.secondary_color,
             fg="white",
-            font=("Segoe UI", 11),
+            font=("Arial", 11),
             relief=tk.FLAT,
             padx=28,
             pady=15,
@@ -477,7 +477,7 @@ Ready to plan your academic future? Let's get started! 🚀
             self.degreeworks_status.config(
                 text=f"✅ {filename}",
                 fg=self.success_color,
-                font=("Segoe UI", 9, "bold")
+                font=("Arial", 9, "bold")
             )
             messagebox.showinfo(
                 "File Loaded",
@@ -499,7 +499,7 @@ Ready to plan your academic future? Let's get started! 🚀
             self.study_plan_status.config(
                 text=f"✅ {filename}",
                 fg=self.success_color,
-                font=("Segoe UI", 9, "bold")
+                font=("Arial", 9, "bold")
             )
             messagebox.showinfo(
                 "File Loaded",
@@ -521,7 +521,7 @@ Ready to plan your academic future? Let's get started! 🚀
             self.schedule_status.config(
                 text=f"✅ {filename}",
                 fg=self.success_color,
-                font=("Segoe UI", 9, "bold")
+                font=("Arial", 9, "bold")
             )
             messagebox.showinfo(
                 "File Loaded",
@@ -964,17 +964,17 @@ Average Credits per Semester: {total_credits/len(plan) if plan else 0:.1f}
         self.degreeworks_status.config(
             text="⭕ No file selected", 
             fg=self.secondary_color,
-            font=("Segoe UI", 9)
+            font=("Arial", 9)
         )
         self.study_plan_status.config(
             text="⭕ No file selected", 
             fg=self.secondary_color,
-            font=("Segoe UI", 9)
+            font=("Arial", 9)
         )
         self.schedule_status.config(
             text="⭕ No file selected", 
             fg=self.secondary_color,
-            font=("Segoe UI", 9)
+            font=("Arial", 9)
         )
         
         # Clear results
