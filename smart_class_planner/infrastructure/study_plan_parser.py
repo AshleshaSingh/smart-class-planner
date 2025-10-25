@@ -98,7 +98,7 @@ class StudyPlanParser(AbstractParser):
 
         structured = {term: [] for term in term_cols}
 
-        ignore_offerings = ['', '.', '??', 'O??', '-', '?', 'O?']  # Common placeholders
+        ignore_offerings = ['', '.', '??', 'O??', '-', '?', 'O?', 'nan']  # Common placeholders (including 'nan' string)
 
         for _, row in df.iterrows():
             code = str(row['Course']).strip()
@@ -109,6 +109,9 @@ class StudyPlanParser(AbstractParser):
                 continue
             title = str(row['Course Title']).strip()
             for term in term_cols:
+                # Check if the value is actually NaN first
+                if pd.isna(row[term]):
+                    continue
                 offering = str(row[term]).strip()
                 if offering and offering not in ignore_offerings:
                     structured[term].append({

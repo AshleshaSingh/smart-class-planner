@@ -205,8 +205,11 @@ class PlanGenerator:
                 return True
 
         # if there's no offering data at all, assume it's available
+        # BUT: avoid scheduling courses without offering data in Summer (most restrictive term)
         if not any(o.course_code == course_code for o in self.repository.offerings):
-            return True
+            if term == "Summer":
+                return False  # Don't assume Summer availability without data
+            return True  # Assume available in Fall/Spring if no data
 
         return False
 
