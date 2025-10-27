@@ -1,7 +1,4 @@
 """
-File: prereq_graph_parser.py
-Author: Ashlesha Singh
-Date: 2025-10-11
 Description:
     Parses prerequisite data into a DAG for dependency validation (P5 in DFD).
 

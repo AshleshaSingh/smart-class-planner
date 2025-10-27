@@ -1,7 +1,4 @@
 """
-File: pdf_parser.py
-Author: Ashlesha Singh
-Date: 2025-10-08
 Description:
     Parses DegreeWorks PDF reports to extract the list of
     remaining required courses for a student (P2 in DFD).

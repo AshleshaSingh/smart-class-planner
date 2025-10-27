@@ -1,7 +1,4 @@
 """
-File: scraper.py
-Author: Ashlesha Singh
-Date: 2025-10-10
 Description:
     Web crawler that extracts prerequisite information from
     the CPSC/CYBR Course Descriptions website (supports P5 in DFD).

@@ -1,11 +1,8 @@
 """
-File: study_plan_parser.py
-Author: Ashlesha Singh
-Date: 2025-10-15
 Description:
     Robust parser for Graduate Study Plan spreadsheets (P3 in DFD).
     Handles merged cells, blank 'Offer' values, and multiple column name variants.
-    Now fully supports 4-Year Schedule for term offerings (fallback for P4).
+    Fully supports 4-Year Schedule for term offerings (fallback for P4).
 
 Architecture Layer:
     Infrastructure Layer → feeds study sequences (D2) and term offerings (D3) to Repository.

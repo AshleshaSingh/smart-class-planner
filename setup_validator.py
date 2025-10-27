@@ -1,8 +1,4 @@
 """
-File: setup_validator.py
-Author: Team Smart Class Planner
-Date: 2025-10-07
-
 Description:
     Unified Setup Validation Script for Smart Class Planning Tool
     --------------------------------------------------------------

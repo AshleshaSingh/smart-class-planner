@@ -90,30 +90,31 @@ smart-class-planner/
 │   ├── presentation/                   # GUI Layer (Tkinter)
 │   │   ├── __init__.py
 │   │   └── setup_wizard.py
+│   │   └── excel_exporter.py
 │   ├── application/                    # Core business logic
 │   │   ├── __init__.py
 │   │   ├── plan_generator.py
 │   │   ├── validator.py
-│   │   └── offerings_handler.py
+│   │   └── planner.py
 │   ├── domain/                         # Data models & repository
 │   │   ├── __init__.py
-│   │   ├── models.py
 │   │   ├── repository.py
-│   │   └── plan_sequence.py
+│   │   ├── course.py
+│   │   ├── offering.py
+│   │   ├── prerequisite.py
+│   │   └── studyplansequence.py
 │   ├── infrastructure/                 # External data connectors
 │   │   ├── __init__.py
 │   │   ├── abstract_parser.py
 │   │   ├── pdf_parser.py
 │   │   ├── study_plan_parser.py
 │   │   ├── scraper.py
-│   │   └── excel_exporter.py
+│   │   └── program_map_scraper.py
 │   └── config/
-│       ├── __init__.py
-│       ├── constants.py
-│       └── settings.json
+│       └── __init__.py
 │
 ├── tests/
-│   ├── test_repository.py
+│   ├── test_integration.py
 │   ├── test_plan_generator.py
 │   └── test_validator.py
 │
@@ -197,28 +198,15 @@ python -m smart_class_planner.main
 
 The application window appears with:
 
-* **Upload DegreeWorks PDF**
-* **Generate Plan** buttons
-* Recommended plan exported as an Excel file
+* **Upload Required file**
+* **Generate Course Plan** buttons- to generate course plan
+* **Export to Excel** buttons- to export recommended plan
+* **Clear All** buttons- to remove all files and reset the tool
 
 ---
 
 ## Testing
 
-Run all unit tests:
-
-```bash
-pytest
-```
-
-Example output:
-
-```
-=================== test session starts ===================
-collected 5 items
-tests/test_repository.py .....
-==================== 5 passed in 0.12s =====================
-```
 
 ---
 
