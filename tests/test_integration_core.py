@@ -1,5 +1,12 @@
 """
-Integration tests for the full planning workflow (Generator + Validator working together)
+Integration Tests (Core Modules)
+--------------------------------
+Validates internal integration between domain and application layers:
+- Repository loading
+- Plan generation
+- Prerequisite validation
+
+Does NOT test GUI or entry-point scripts.
 """
 
 import pytest
