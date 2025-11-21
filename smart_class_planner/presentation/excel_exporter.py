@@ -38,7 +38,14 @@ class ExcelExporter:
             plan_data: The plan object or data structure containing course information
             file_path: Path where Excel file will be saved
             metadata: Optional dictionary with generation metadata
+
         """
+        if not plan_data:
+            df = pd.DataFrame(columns=["Term", "Course", "Credits"])
+            with pd.ExcelWriter(file_path) as writer:
+                df.to_excel(writer, index=False)
+            return False
+    
         self.file_path = file_path
         
         # Convert plan_data to structured format if it's a string
@@ -67,6 +74,13 @@ class ExcelExporter:
             
             # Apply formatting
             self._apply_formatting(writer.book)
+        try:
+            writer.close()
+            print(f"[ExcelExporter] Plan exported successfully to {output_path}")
+            return True
+        except Exception as e:
+            print(f"[ExcelExporter] Export failed: {e}")
+            return False
     
     def export_simple(self, courses: List[Dict], file_path: str):
         """

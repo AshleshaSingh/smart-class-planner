@@ -40,39 +40,51 @@ class ProgramMapScraper(AbstractParser):
         try:
             resp = requests.get(self.BASE_URL, timeout=10)
             resp.raise_for_status()
+            html = resp.text
+            
         except requests.RequestException as e:
             print(f"Web scrape failed, using fallback if source provided: {e}")
             if source:
-                return self.parse(source)  # Recursive fallback
+                return self.parse(source, _retry=True)  # Recursive fallback
             return {}
-
-        soup = BeautifulSoup(resp.text, "html.parser")
-        structured: Dict[str, List[Dict[str, Any]]] = {}
-
-        # Parse tables for terms/courses (adapt to actual HTML)
-        tables = soup.find_all("table", class_=re.compile(r"program|map|schedule", re.I))
-        for table in tables:
-            rows = table.find_all("tr")
-            current_term = None
-            for row in rows:
-                cells = row.find_all(["td", "th"])
-                if not cells:
-                    continue
-                cell_text = [c.get_text(strip=True) for c in cells]
-                if any(term_pat in " ".join(cell_text).upper() for term_pat in ["FALL", "SPRING", "SUMMER"]):
-                    current_term = " ".join(cell_text).upper().split()[0]  # e.g., "FALL 2025"
-                elif current_term and any("CPSC" in c or "CYBR" in c for c in cell_text):
-                    for cell in cells:
-                        text = cell.get_text()
-                        code_match = re.search(r"(CPSC|CYBR)\s+\d+", text)
-                        if code_match:
-                            code = code_match.group(0).strip()
-                            title = text.split("-", 1)[-1].strip() if "-" in text else ""
-                            structured.setdefault(current_term, []).append({"code": code, "title": title})
-
-        if not structured:
-            print("No web data extracted; provide local source for fallback.")
+        
+        if not html or "<html" not in html.lower():
+            print("[Scraper] Empty or invalid HTML content.")
             return {}
+        
+        try:
 
-        print(f"Scraped {sum(len(v) for v in structured.values())} offerings across {len(structured)} terms.")
-        return structured
+            soup = BeautifulSoup(resp.text, "html.parser")
+            structured: Dict[str, List[Dict[str, Any]]] = {}
+
+            # Parse tables for terms/courses (adapt to actual HTML)
+            tables = soup.find_all("table", class_=re.compile(r"program|map|schedule", re.I))
+            for table in tables:
+                rows = table.find_all("tr")
+                current_term = None
+                for row in rows:
+                    cells = row.find_all(["td", "th"])
+                    if not cells:
+                        continue
+                    cell_text = [c.get_text(strip=True) for c in cells]
+                    if any(term_pat in " ".join(cell_text).upper() for term_pat in ["FALL", "SPRING", "SUMMER"]):
+                        current_term = " ".join(cell_text).upper().split()[0]  # e.g., "FALL 2025"
+                    elif current_term and any("CPSC" in c or "CYBR" in c for c in cell_text):
+                        for cell in cells:
+                            text = cell.get_text()
+                            code_match = re.search(r"(CPSC|CYBR)\s+\d+", text)
+                            if code_match:
+                                code = code_match.group(0).strip()
+                                title = text.split("-", 1)[-1].strip() if "-" in text else ""
+                                structured.setdefault(current_term, []).append({"code": code, "title": title})
+
+            if not structured:
+                print("No web data extracted; provide local source for fallback.")
+                return {}
+
+            print(f"Scraped {sum(len(v) for v in structured.values())} offerings across {len(structured)} terms.")
+            return structured
+        
+        except Exception as e:
+            print(f"[Scraper] Parsing error: {e}")
+            return {}

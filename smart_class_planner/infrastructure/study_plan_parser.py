@@ -17,6 +17,37 @@ from .abstract_parser import AbstractParser
 class StudyPlanParser(AbstractParser):
     """Parses Graduate Study Plan and 4-Year Schedule Excel sheets."""
 
+    def validate_graduate_study_plan(self, file_path):
+        import pandas as pd
+        df = pd.read_excel(file_path, header=None)
+        text = " ".join(df.fillna("").astype(str).stack().tolist()).lower()
+
+        # 1. Check that it's NOT a 4-Year Schedule
+        # The schedule file always contains these words near the top:
+        schedule_keywords = ["four-year", "schedule", "course title", "day time", "night time", "online", "fixed date"]
+        if any(k in text for k in schedule_keywords):
+            raise ValueError("File appears to be a 4-Year Course Schedule, not a Graduate Study Plan.")
+
+        # 2️. Must contain degree track identifiers and term headers
+        has_term_headers = any(term in text for term in ["fall start", "spring start", "summer"])
+        has_program_tracks = any(track in text for track in ["cybr", "acs", "software dev", "ai and data science"])
+
+        if not has_term_headers or not has_program_tracks:
+            raise ValueError("Invalid Study Plan: Missing CYBR/ACS program tracks or term start sections.")
+
+        # 3️. Sanity check: should have few columns (3–6 typical)
+        if df.shape[1] > 10:
+            raise ValueError("Invalid Study Plan: Too many columns, likely not a Graduate Study Plan.")
+
+        return True
+        
+    def validate_four_year_schedule(self, file_path):
+        df = pd.read_excel(file_path, header=None)
+        text = " ".join(df.fillna("").astype(str).stack().tolist()).lower()
+        if "four-year" not in text and not any(t in text for t in ["fa24", "sp25", "su25"]):
+            raise ValueError("File does not contain Four-Year Schedule data or term codes.")
+
+    
     def parse(self, file_path: str) -> Dict[str, List[Dict[str, Any]]]:
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"File not found: {file_path}")

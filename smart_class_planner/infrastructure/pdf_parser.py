@@ -4,7 +4,7 @@ Description:
     remaining required courses for a student (P2 in DFD).
 
 Dependencies:
-    - PyPDF2
+    - pypdf
 
 Architecture Layer:
     Infrastructure Layer → feeds remaining courses (D1) to Repository.
@@ -12,12 +12,21 @@ Architecture Layer:
 
 import os
 from typing import List, Dict
-from PyPDF2 import PdfReader
+from pypdf import PdfReader
 from .abstract_parser import AbstractParser
+from pypdf.errors import PdfStreamError
 
 
 class PDFParser(AbstractParser):
     """Parses DegreeWorks PDF reports to extract required courses."""
+
+    def validate(self, file_path):
+        with open(file_path, "rb") as f:
+            data = f.read()
+            snippet = data[:4096].decode(errors="ignore").lower() + data[-4096:].decode(errors="ignore").lower()
+            if "degree works" not in snippet and "degree progress" not in snippet and "degree audit report" not in snippet:
+                raise ValueError("File does not appear to be a valid DegreeWorks or Degree Progress report.")
+
 
     def parse(self, file_path: str) -> List[Dict[str, str]]:
         """
@@ -33,42 +42,49 @@ class PDFParser(AbstractParser):
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"DegreeWorks file not found: {file_path}")
 
-        reader = PdfReader(file_path)
-        text = ""
-        for page in reader.pages:
-            text += page.extract_text() + "\n"
+        try: 
+            reader = PdfReader(file_path)
+            text = ""
+            for page in reader.pages:
+                text += page.extract_text() + "\n"
 
-        # Extract courses marked as "Still needed"
-        import re
-        courses = []
-        lines = text.splitlines()
+            # Extract courses marked as "Still needed"
+            import re
+            courses = []
+            lines = text.splitlines()
 
-        for line in lines:
-            line = line.strip()
-            # Look for lines with "Still needed:" followed by course codes
-            if "Still needed:" in line:
-                # Split at "Except" to exclude courses that don't count
-                # Example: "Still needed: 6 Credits in CPSC 6985 or ... Except CPSC 6103 or ..."
-                # We only want the part BEFORE "Except"
-                if "Except" in line or "except" in line:
-                    # Case-insensitive split at "Except"
-                    line = re.split(r'\s+[Ee]xcept\s+', line)[0]
+            for line in lines:
+                line = line.strip()
+                # Look for lines with "Still needed:" followed by course codes
+                if "Still needed:" in line:
+                    # Split at "Except" to exclude courses that don't count
+                    # Example: "Still needed: 6 Credits in CPSC 6985 or ... Except CPSC 6103 or ..."
+                    # We only want the part BEFORE "Except"
+                    if "Except" in line or "except" in line:
+                        # Case-insensitive split at "Except"
+                        line = re.split(r'\s+[Ee]xcept\s+', line)[0]
 
-                # Extract CPSC/CYBR course codes from this line
-                course_codes = re.findall(r'(CPSC|CYBR)\s*(\d{4})', line) # Pattern: "Still needed: 1 Class in CPSC 6119" or "Still needed: 6 Credits in CPSC 6985 or..."
-                for prefix, number in course_codes:
-                    code = f"{prefix} {number}"
-                    title = self._find_course_title(text, code) # Try to find the title from earlier in the document
-                    courses.append({"code": code, "title": title})
-                    # print(f"DEBUG PDF: Found still-needed course: {code}")
+                    # Extract CPSC/CYBR course codes from this line
+                    course_codes = re.findall(r'(CPSC|CYBR)\s*(\d{4})', line) # Pattern: "Still needed: 1 Class in CPSC 6119" or "Still needed: 6 Credits in CPSC 6985 or..."
+                    for prefix, number in course_codes:
+                        code = f"{prefix} {number}"
+                        title = self._find_course_title(text, code) # Try to find the title from earlier in the document
+                        courses.append({"code": code, "title": title})
 
-        # Remove duplicates
-        seen = set()
-        unique_courses = []
-        for course in courses:
-            if course['code'] not in seen:
-                seen.add(course['code'])
-                unique_courses.append(course)
+            # Remove duplicates
+            seen = set()
+            unique_courses = []
+            for course in courses:
+                if course['code'] not in seen:
+                    seen.add(course['code'])
+                    unique_courses.append(course)
+
+        except PdfStreamError as e:
+            print(f"[PDFParser] Invalid PDF stream: {e}")
+            return []
+        except Exception as e:
+            print(f"[PDFParser] Unexpected error reading {file_path}: {e}")
+            return []
 
         print(f"Extracted {len(unique_courses)} remaining courses from DegreeWorks.")
         return unique_courses
