@@ -70,40 +70,56 @@ def check_tkinter():
 def check_dependencies():
     """
     Cross-checks installed packages (via pip list) against requirements.txt.
-    This avoids importlib issues on Python 3.14+ and handles alias names.
+    This avoids importlib issues on Python 3.14+ and handles alias names
+    and version specifiers (==, >=, etc.).
     """
     import subprocess
+    import sys
+    import re
 
     print("Checking dependencies (requirements.txt)...")
 
-    # Get a clean list of installed packages from pip
+    # Use the same Python that's running this script
     result = subprocess.run(
-        ["pip", "list", "--format=freeze"],
+        [sys.executable, "-m", "pip", "list", "--format=freeze"],
         capture_output=True,
-        text=True
+        text=True,
     )
     installed_lines = result.stdout.splitlines()
-    installed_pkgs = {line.split("==")[0].lower() for line in installed_lines}
+    installed_pkgs = {
+        line.split("==")[0].strip().lower()
+        for line in installed_lines
+        if "==" in line
+    }
+
+    # Regex to grab the package name at the start of the requirement line
+    name_pattern = re.compile(r"^\s*([A-Za-z0-9_.\-]+)")
 
     missing = []
     with open("requirements.txt") as reqs:
-        for line in reqs:
-            pkg = line.strip().split("==")[0].lower()
-            if not pkg or pkg.startswith("#"):
+        for raw_line in reqs:
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
                 continue
+
+            match = name_pattern.match(line)
+            if not match:
+                continue  # skip weird lines
+
+            pkg_name = match.group(1).lower()
 
             # map known aliases (import name != package name)
             alias_map = {
                 "beautifulsoup4": "bs4",
-                "pypdf2": "pypdf2",
+                "pypdf": "pypdf",
             }
-            alias = alias_map.get(pkg, pkg)
+            alias = alias_map.get(pkg_name, pkg_name)
 
-            if pkg in installed_pkgs or alias in installed_pkgs:
-                print(f"   {pkg} is installed.")
+            if pkg_name in installed_pkgs or alias in installed_pkgs:
+                print(f"   {pkg_name} is installed.")
             else:
-                print(f"   Missing dependency: {pkg}")
-                missing.append(pkg)
+                print(f"   Missing dependency: {pkg_name}")
+                missing.append(pkg_name)
 
     if not missing:
         print("All dependencies verified.\n")

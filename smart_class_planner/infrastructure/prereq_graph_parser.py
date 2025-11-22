@@ -1,6 +1,7 @@
 """
-Description:
-    Parses prerequisite data into a DAG for dependency validation (P5 in DFD).
+This module defines the PrereqGraphParser class, which converts prerequisite data
+into a graph structure representation. The graph is used by the Smart Class Planner
+application to model dependencies between courses and detect circular prerequisites.
 
 Dependencies:
     - networkx
@@ -15,7 +16,12 @@ from .abstract_parser import AbstractParser
 
 
 class PrereqGraphParser(AbstractParser):
-    """Builds a DAG from prerequisite mappings."""
+    """Parses prerequisite data into a directed graph structure.
+
+    This parser is responsible for creating node–edge mappings that represent
+    course dependencies. Each node corresponds to a course, and each directed
+    edge indicates a prerequisite relationship.
+    """
 
     def parse(self, source: Dict[str, List[str]]) -> Dict[str, Any]:
         """
@@ -26,7 +32,13 @@ class PrereqGraphParser(AbstractParser):
 
         Returns:
             Dict with 'graph' (networkx DiGraph), 'nodes' (list), 'edges' (list).
+        
+            Raises:
+            ValueError: If input data is not a dictionary or has invalid structure.
         """
+        if not isinstance(source, dict):
+            raise ValueError("Invalid prerequisite data: expected dictionary input.")
+
         G = nx.DiGraph()
 
         # Add nodes and edges

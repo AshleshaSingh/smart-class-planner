@@ -19,7 +19,12 @@ from .abstract_parser import AbstractParser
 
 
 class PrerequisiteScraper(AbstractParser):
-    """Scrapes CPSC/CYBR core course prerequisites from the online catalog."""
+    """Scrapes CPSC/CYBR core course prerequisites from the online catalog.
+
+    This scraper extracts prerequisite relationships from the official CSU
+    course catalog. If the site is inaccessible (e.g., due to rate limiting or
+    campus firewall), the class uses a verified fallback dictionary.
+    """
 
     BASE_URLS = [
         "https://catalog.columbusstate.edu/course-descriptions/cpsc/#cpsctext",
@@ -55,6 +60,16 @@ class PrerequisiteScraper(AbstractParser):
     }
 
     def parse(self, _: str = None) -> Dict[str, List[str]]:
+        """Scrape prerequisite data from CSU course catalog or use fallback.
+
+        Returns:
+            Dict[str, List[str]]: Mapping of course codes to prerequisite codes.
+                Example:
+                    {
+                        "CPSC 6121": ["CPSC 6114"],
+                        "CYBR 6128": ["CYBR 6126", "CPSC 6157"]
+                    }
+        """
         prereqs = {}
         headers = {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -74,6 +89,7 @@ class PrerequisiteScraper(AbstractParser):
                 print(f"Failed to fetch {url}: {e}")
                 continue
 
+            # Only parse if fetch succeeded
             if fetch_success:
                 soup = BeautifulSoup(resp.text, "html.parser")
                 for p in soup.find_all("p"):
@@ -97,6 +113,7 @@ class PrerequisiteScraper(AbstractParser):
                     else:
                         prereqs[code] = []
 
+        # Fallback if scraping fails
         if not prereqs and not fetch_success:
             print("Site blocked; using verified fallback core prereqs from catalog.")
             prereqs = self.FALLBACK_PREREQS.copy()

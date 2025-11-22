@@ -1,7 +1,8 @@
 """
-Description:
-    Parses DegreeWorks PDF reports to extract the list of
-    remaining required courses for a student (P2 in DFD).
+This module defines the PDFParser class, responsible for extracting course information
+from DegreeWorks PDF files. It identifies completed and remaining courses using text
+extraction and pattern recognition. The parser ensures resilience against corrupted or
+malformed PDFs and includes structured error handling.
 
 Dependencies:
     - pypdf
@@ -11,6 +12,7 @@ Architecture Layer:
 """
 
 import os
+import re
 from typing import List, Dict
 from pypdf import PdfReader
 from .abstract_parser import AbstractParser
@@ -18,31 +20,68 @@ from pypdf.errors import PdfStreamError
 
 
 class PDFParser(AbstractParser):
-    """Parses DegreeWorks PDF reports to extract required courses."""
+    """Parses DegreeWorks PDF files to extract academic course data.
 
-    def validate(self, file_path):
-        with open(file_path, "rb") as f:
-            data = f.read()
-            snippet = data[:4096].decode(errors="ignore").lower() + data[-4096:].decode(errors="ignore").lower()
-            if "degree works" not in snippet and "degree progress" not in snippet and "degree audit report" not in snippet:
-                raise ValueError("File does not appear to be a valid DegreeWorks or Degree Progress report.")
+    This class scans the DegreeWorks report to find sections such as
+    *Still Needed* and *Completed* courses. The parsed data is returned
+    in a structured list format for repository ingestion.
+    """
+
+    def validate(self, file_path: str) -> None:
+        """Validate that the file appears to be a valid DegreeWorks/Progress report.
+
+        Reads portions of the file content and searches for known keywords such as
+        'Degree Works', 'Degree Progress', or 'Degree Audit Report'. Raises an error
+        if none of these are found.
+
+        Args:
+            file_path (str): Path to the PDF file for validation.
+
+        Raises:
+            ValueError: If the file does not contain expected DegreeWorks identifiers.
+        """
+        reader = PdfReader(file_path)
+        text = ""
+        for page in reader.pages:
+            text += page.extract_text() or ""
+
+        text = text.lower()
+
+        if (
+            "degree works" not in text
+            and "degree progress" not in text
+            and "degree audit report" not in text
+        ):
+            raise ValueError("Invalid DegreeWorks/Degree Progress report")
 
 
     def parse(self, file_path: str) -> List[Dict[str, str]]:
         """
         Extracts remaining required courses from DegreeWorks PDF.
 
+        The parser reads the PDF file page by page, searches for text
+        patterns related to course listings, and extracts course codes
+        and titles into a structured list of dictionaries.
+
         Args:
             file_path (str): Path to the DegreeWorks PDF file.
 
         Returns:
-            List[Dict[str, str]]: Example:
-                [{"code": "CPSC 6109", "title": "Algorithms Analysis and Design"}, ...]
+            List[Dict[str, str]]: A list of course entries, where each dictionary contains:
+                - code (str): Course code (e.g., 'CPSC 6105').
+                - title (str): Course title (e.g., 'Advanced Algorithms').
+
+        Raises:
+            FileNotFoundError: If the provided file path does not exist.
+            ValueError: If the file content does not resemble a valid DegreeWorks report.
+            Exception: For any unexpected errors during PDF parsing.
         """
+        # Validate file existence before attempting to open.
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"DegreeWorks file not found: {file_path}")
 
         try: 
+            # Open and read PDF using pypdf.
             reader = PdfReader(file_path)
             text = ""
             for page in reader.pages:
@@ -79,19 +118,34 @@ class PDFParser(AbstractParser):
                     seen.add(course['code'])
                     unique_courses.append(course)
 
+            print(f"Extracted {len(unique_courses)} remaining courses from DegreeWorks.")
+            return unique_courses
+
         except PdfStreamError as e:
             print(f"[PDFParser] Invalid PDF stream: {e}")
             return []
+        except FileNotFoundError:
+            # Propagate specific file-not-found exception.
+            raise
         except Exception as e:
-            print(f"[PDFParser] Unexpected error reading {file_path}: {e}")
-            return []
-
-        print(f"Extracted {len(unique_courses)} remaining courses from DegreeWorks.")
-        return unique_courses
+            # Catch and wrap unexpected parsing issues for clarity.
+            raise Exception(f"PDF parsing failed: {e}")
 
     def _find_course_title(self, text: str, course_code: str) -> str:
-        """Try to find the course title in the PDF text."""
-        import re
+        """Find the course title corresponding to a given course code.
+
+        This helper method searches the text around a course code to locate its title
+        using flexible pattern matching. It looks for formats such as:
+        'CPSC 6119- Object-Oriented Development'.
+
+        Args:
+            text (str): Extracted text from the PDF page.
+            course_code (str): The specific course code to search for.
+
+        Returns:
+            str: The detected course title, or an empty string if none found.
+        """
+        
         # Look for patterns like "CPSC 6119- Object-Oriented Development"
         pattern = re.escape(course_code) + r'[-\s]*([A-Za-z][\w\s,&\-]+?)(?:\n|Still|Grade|Credits|$)'
         match = re.search(pattern, text)

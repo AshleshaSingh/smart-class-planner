@@ -15,10 +15,27 @@ from .abstract_parser import AbstractParser
 
 
 class StudyPlanParser(AbstractParser):
-    """Parses Graduate Study Plan and 4-Year Schedule Excel sheets."""
+    """Parses Graduate Study Plan and 4-Year Schedule Excel sheets.
+
+    This parser automatically detects whether an uploaded Excel file represents
+    a Graduate Study Plan or a 4-Year Course Schedule. It extracts structured
+    data in a consistent format usable by the DataLoader and Repository.
+    """
+
 
     def validate_graduate_study_plan(self, file_path):
-        import pandas as pd
+        """Validate whether a file is a Graduate Study Plan.
+
+        Checks for common schedule indicators to ensure the wrong file
+        (e.g., 4-Year Schedule) is not uploaded by mistake.
+
+        Args:
+            file_path (str): Path to the Excel file being validated.
+
+        Raises:
+            ValueError: If the file structure or content does not match a
+                        Graduate Study Plan.
+        """
         df = pd.read_excel(file_path, header=None)
         text = " ".join(df.fillna("").astype(str).stack().tolist()).lower()
 
@@ -42,6 +59,17 @@ class StudyPlanParser(AbstractParser):
         return True
         
     def validate_four_year_schedule(self, file_path):
+        """Validate whether a file is a 4-Year Schedule.
+
+        Ensures that the uploaded Excel file includes expected keywords
+        or codes that confirm it is a CSU 4-Year schedule format.
+
+        Args:
+            file_path (str): Path to the Excel file.
+
+        Raises:
+            ValueError: If file does not appear to contain 4-Year Schedule data.
+        """
         df = pd.read_excel(file_path, header=None)
         text = " ".join(df.fillna("").astype(str).stack().tolist()).lower()
         if "four-year" not in text and not any(t in text for t in ["fa24", "sp25", "su25"]):
@@ -49,6 +77,14 @@ class StudyPlanParser(AbstractParser):
 
     
     def parse(self, file_path: str) -> Dict[str, List[Dict[str, Any]]]:
+        """Detect file type and parse accordingly.
+
+        Args:
+            file_path (str): Path to the Excel file.
+
+        Returns:
+            Dict[str, List[Dict[str, Any]]]: Structured course data indexed by term.
+        """
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"File not found: {file_path}")
 
@@ -68,6 +104,14 @@ class StudyPlanParser(AbstractParser):
 
     # ----------------------------------------------------------------------
     def _parse_graduate_study_plan(self, df: pd.DataFrame) -> Dict[str, List[Dict[str, Any]]]:
+        """Parse Graduate Study Plan format (core courses and semesters).
+
+        Args:
+            df (pd.DataFrame): DataFrame of the Excel file.
+
+        Returns:
+            Dict[str, List[Dict[str, Any]]]: Parsed data structured by semester.
+        """
         print("Detected: Graduate Study Plan (Adaptive parsing)")
         structured: Dict[str, List[Dict[str, Any]]] = {}
 
@@ -112,10 +156,13 @@ class StudyPlanParser(AbstractParser):
 
     # ----------------------------------------------------------------------
     def _parse_four_year_schedule(self, file_path: str) -> Dict[str, List[Dict[str, Any]]]:
-        """
-        Parses 4-Year Schedule Excel to extract term offerings (D3 in DFD).
-        Returns {term: [{"code": "CPSC 6109", "title": "...", "offering_type": "D,N,O"}, ...]}
-        Filters for CPSC/CYBR core courses only.
+        """Parse 4-Year Schedule to extract term offerings.
+
+        Args:
+            file_path (str): Path to the 4-Year Schedule Excel file.
+
+        Returns:
+            Dict[str, List[Dict[str, Any]]]: Course offerings by term.
         """
         print("Detected: 4-Year Schedule (Parsing term offerings)")
         df = pd.read_excel(file_path, header=2, sheet_name='Sheet1')  # Skip intro rows
