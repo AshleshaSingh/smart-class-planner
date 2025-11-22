@@ -5,8 +5,6 @@ Centralized data integration layer for Smart Class Planner.
 This module coordinates parsing of DegreeWorks PDF, Study Plan Excel,
 and Program Map data, converting them into domain entities (Course,
 Offering, Prerequisite) and populating the Repository.
-
-Author: ChatGPT (2025)
 """
 
 from smart_class_planner.infrastructure.pdf_parser import PDFParser
