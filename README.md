@@ -1,240 +1,280 @@
-# Smart Class Planning Tool
+# Smart Class Planner
 
-**A Python-based academic advising application** that automates course planning, prerequisite validation, and semester scheduling for students and faculty.
-
-This tool generates a recommended study plan in Excel format by analyzing DegreeWorks data, graduate study plans, and 4-year course schedules.
-It also validates prerequisite chains using a web crawler that extracts information from CPSC course descriptions.
+A Python-based academic advising application that automates course planning, prerequisite validation, and semester scheduling.
 
 ---
 
-## Table of Contents
+## Purpose
 
-1. [Overview](#overview)
-2. [Features](#features)
-3. [System Requirements](#system-requirements)
-4. [Project Structure](#project-structure)
-5. [Setup Instructions](#setup-instructions)
-6. [Environment Verification](#environment-verification)
-7. [Running the Application](#running-the-application)
-8. [Team Roles](#team-roles)
-9. [Testing](#testing)
-10. [Troubleshooting](#troubleshooting)
-11. [References](#references)
+The Smart Class Planner streamlines academic advising by automating course planning for students and faculty. The application:
+
+- **Generates semester-by-semester course recommendations** from current progress until graduation
+- **Validates prerequisite requirements** by web-crawling the university course catalog
+- **Analyzes multiple data sources**: DegreeWorks reports, graduate study plans, and 4-year course schedules
+- **Exports optimized study plans** to Excel format for easy review and modification
+- **Provides a user-friendly GUI** for file upload, plan generation, and export
+
+This tool eliminates manual effort in degree planning, reduces prerequisite conflicts, and helps students graduate on schedule.
 
 ---
 
-## Overview
+## Prerequisites
 
-Academic advising and degree planning often require significant manual effort from both students and faculty.
-This **Smart Class Planning Tool** streamlines that process by automating:
+### System Requirements
+- **Operating System**: Windows 10/11, macOS 10.15+, or Linux (Ubuntu 20.04+)
+- **Python**: Version 3.12 or newer (required)
+- **Disk Space**: 500 MB minimum
+- **Display**: GUI-capable environment
 
-* Course prerequisite validation
-* Semester-wise plan generation
-* Exporting plans to Excel
-* Providing a simple, interactive GUI (Tkinter)
+### Required Software
 
-The software follows a **layered architecture** for modularity, scalability, and maintainability.
+**Python 3.12+** with the following packages (auto-installed via requirements.txt):
+- `pandas` - Data analysis
+- `openpyxl` - Excel file generation
+- `beautifulsoup4` - Web scraping
+- `requests` - HTTP requests
+- `PyPDF2` or `pypdf` - PDF parsing
+- `tkinter` - GUI framework (included with Python)
+- `pytest` - Testing framework
 
----
+### Platform-Specific Notes
 
-## Features
+**Windows**: Tkinter included by default with Python from python.org
 
-| Category                       | Description                                                            |
-| ------------------------------ | ---------------------------------------------------------------------- |
-| **Course Planning**         | Generates semester-wise course recommendations until graduation        |
-| **Prerequisite Validation** | Detects prerequisite issues using a web crawler and course catalog     |
-| **Input Parsing**          | Parses DegreeWorks reports, Graduate Study Plans, and 4-year schedules |
-| **Smart Logic**             | Suggests alternatives for unavailable offerings                        |
-| **GUI**                     | Simple Tkinter interface for file selection and output                 |
-| **Output**                  | Exports results to Excel (`.xlsx`) format                              |
-| **Architecture**            | Layered + MVC principles for maintainability                           |
-| **Testing**                 | Supports `pytest`-based unit and integration tests                     |
+**macOS**:
+- Homebrew Python 3.13 lacks Tkinter support
+- Install Python 3.12+ from [python.org](https://www.python.org/downloads/macos/)
+- Verify: `python -m tkinter`
 
----
-
-## System Requirements
-
-| Requirement       | Minimum                                                          |
-| ----------------- | ---------------------------------------------------------------- |
-| **OS**            | macOS, Windows, or Linux                                         |
-| **Python**        | 3.12.x (recommended)                                             |
-| **Pip**           | v23+                                                             |
-| **Libraries**     | pandas, openpyxl, beautifulsoup4, requests, tkintertable, pytest |
-| **GUI Framework** | Tkinter (included in most official Python distributions)         |
-
----
-
-### Important Cross-Platform Note
-
-> **Tkinter must be available in your Python installation to run the GUI.**
->
->  **macOS:**
->   The **Homebrew build of Python 3.13** does *not* include Tkinter.
->   Install **Python 3.12 or newer** using the official macOS installer from [python.org](https://www.python.org/downloads/macos/).
->
->  **Windows:**
->   Tkinter is included by default with all standard Python installers.
->
->  **Linux (Ubuntu/Debian):**
->   Run `sudo apt install python3-tk` to add Tkinter support.
-
----
-
-##  Project Structure
-
-```
-smart-class-planner/
-├── smart_class_planner/
-│   ├── __init__.py
-│   ├── main.py                         # Entry point
-│   ├── presentation/                   # GUI Layer (Tkinter)
-│   │   ├── __init__.py
-│   │   └── setup_wizard.py
-│   │   └── excel_exporter.py
-│   ├── application/                    # Core business logic
-│   │   ├── __init__.py
-│   │   ├── plan_generator.py
-│   │   ├── validator.py
-│   │   └── planner.py
-│   ├── domain/                         # Data models & repository
-│   │   ├── __init__.py
-│   │   ├── repository.py
-│   │   ├── course.py
-│   │   ├── offering.py
-│   │   ├── prerequisite.py
-│   │   └── studyplansequence.py
-│   ├── infrastructure/                 # External data connectors
-│   │   ├── __init__.py
-│   │   ├── abstract_parser.py
-│   │   ├── pdf_parser.py
-│   │   ├── study_plan_parser.py
-│   │   ├── scraper.py
-│   │   └── program_map_scraper.py
-│   └── config/
-│       └── __init__.py
-│
-├── tests/
-│   ├── test_integration.py
-│   ├── test_plan_generator.py
-│   └── test_validator.py
-│
-├── setup_validator.py                 # Unified environment + module checker
-├── requirements.txt                   # Verified dependency list
-├── venv/
-├── .gitignore
-└── README.md
-```
-
----
-
-## Setup Instructions
-
-### Step 1 – Clone the Repository
-
+**Linux (Ubuntu/Debian)**:
 ```bash
-git clone https://github.com/<your-username>/smart-class-planner.git
+sudo apt install python3-tk python3-pip
+```
+
+---
+
+## Download
+
+### Option 1: Source Code (Developers)
+
+**Clone from GitHub:**
+```bash
+git clone https://github.com/AshleshaSingh/smart-class-planner.git
 cd smart-class-planner
 ```
 
+**Or download ZIP:**
+1. Visit [https://github.com/AshleshaSingh/smart-class-planner](https://github.com/AshleshaSingh/smart-class-planner)
+2. Click "Code" → "Download ZIP"
+3. Extract and navigate to folder
+
+### Option 2: Windows Installer (End Users)
+
+Download the pre-built installer:
+- **File**: `SmartClassPlanner_Setup_1.0.0.exe`
+- **Location**: `installer_output/` folder in repository or submission package
+- **Includes**: Standalone executable with all dependencies bundled (no Python required)
+
 ---
 
-### Step 2 – Create and Activate a Virtual Environment
+## Build/Configuration/Installation/Deployment
 
+
+### Installation Method A: Install via Windows Installer
+
+**For End Users (No Python Required):**
+
+1. Run `SmartClassPlanner_Setup_1.0.0.exe`
+2. Follow installation wizard
+3. Choose installation directory (default: `C:\Program Files\Smart Class Planner`)
+4. Create desktop shortcut (optional)
+5. Click "Install"
+
+**Launch:** Use desktop shortcut or Start Menu → Smart Class Planner
+
+**Uninstall:** Windows Settings → Apps → Smart Class Planner → Uninstall
+
+---
+
+### Installation Method B: Run from Source Code
+
+**1. Verify Python:**
 ```bash
-python3 -m venv venv
-source venv/bin/activate      # macOS/Linux
-# OR
-venv\Scripts\activate         # Windows
+python --version  # Should be 3.12+
 ```
 
----
-
-### Step 3 – Install Dependencies
-
+**2. Create Virtual Environment:**
 ```bash
+python -m venv venv
+
+# Activate:
+venv\Scripts\activate          # Windows
+source venv/bin/activate       # macOS/Linux
+```
+
+**3. Install Dependencies:**
+```bash
+pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
----
-
-### Step 4 – Verify the Environment
-
-Run the included diagnostic script:
-
+**4. Validate Setup:**
 ```bash
 python setup_validator.py
+# Should show: ✓ Python version, ✓ Tkinter, ✓ All packages installed
 ```
 
-This script checks:
-
-* Python version (3.12 recommended)
-* Tkinter GUI availability
-* All required libraries
-* Successful import of all modules
-
----
-
-## Environment Verification (Manual)
-
-Quick manual check:
-
-```bash
-python --version
-python -m tkinter
-python -c "import pandas, openpyxl, bs4, requests; print('All good!')"
-```
-
-If a blank Tkinter window appears and no ImportErrors occur, you’re ready!
-
----
-
-## Running the Application
-
-Launch the GUI:
-
+**5. Run Application:**
 ```bash
 python -m smart_class_planner.main
 ```
 
-The application window appears with:
+---
 
-* **Upload Required file**
-* **Generate Course Plan** buttons- to generate course plan
-* **Export to Excel** buttons- to export recommended plan
-* **Clear All** buttons- to remove all files and reset the tool
+### Installation Method C: Build Windows Installer
+
+**Prerequisites:**
+- Windows 10/11
+- Python 3.12+
+- [Inno Setup 6](https://jrsoftware.org/isinfo.php)
+
+**Build Steps:**
+```bash
+cd smart-class-planner
+build_installer.bat
+```
+
+**What happens:**
+1. Creates/activates virtual environment
+2. Installs dependencies
+3. Runs PyInstaller to create standalone executable
+4. Runs Inno Setup to create installer
+
+**Output:**
+- Executable: `dist\SmartClassPlanner\SmartClassPlanner.exe`
+- Installer: `installer_output\SmartClassPlanner_Setup_1.0.0.exe`
+
+---
+
+## Usage
+
+### Starting the Application
+
+**From Source:**
+```bash
+# Activate virtual environment first
+python -m smart_class_planner.main
+```
+
+**From Installer:**
+- Double-click desktop shortcut or launch from Start Menu
+
+### Workflow
+
+**Step 1: Upload Files**
+
+Click upload buttons to select:
+- **DegreeWorks PDF**: Academic audit showing completed courses
+- **Graduate Study Plan**: Program requirements document
+- **4-Year Schedule**: Course offering schedule
+
+**Step 2: Generate Plan**
+
+1. Click "Generate Course Plan"
+2. Application processes files and validates prerequisites
+3. View generated semester-by-semester plan
+
+**Step 3: Export to Excel**
+
+1. Click "Export to Excel"
+2. Choose save location
+3. Excel file contains:
+   - Semester Plan (courses by semester)
+   - Course Details (prerequisites, descriptions)
+   - Progress Tracker (completion status)
+
+**Step 4: Review and Adjust**
+
+- Review plan with advisor
+- Make adjustments if needed
+- Re-upload files and regenerate as needed
+
+### GUI Buttons
+
+- **Upload Required Files**: Select input files (DegreeWorks, Study Plan, Schedule)
+- **Generate Course Plan**: Process files and create semester plan
+- **Export to Excel**: Save plan to .xlsx file
+- **Clear All**: Reset application and remove loaded files
+
+### Example Output
+
+Generated plan shows:
+```
+Fall 2025:    CS 530, CS 540, CS 550 (9 credits)
+Spring 2026:  CS 560, CS 570 (6 credits)
+Fall 2026:    CS 580, CS 590 (6 credits)
+Graduation:   December 2026
+```
 
 ---
 
 ## Testing
 
+Run tests:
+```bash
+pytest                                              # All tests
+pytest --cov=smart_class_planner --cov-report=html  # With coverage
+```
 
 ---
 
-## Troubleshooting
+## Project Structure
 
-| Issue                         | Likely Cause                          | Solution                                                 |
-| ----------------------------- | ------------------------------------- | -------------------------------------------------------- |
-| `_tkinter` module not found | Using Homebrew Python (3.13) on macOS | Install Python 3.12 from python.org                      |
-| Missing packages            | venv not activated                    | `source venv/bin/activate` → reinstall deps              |
-| GUI won’t appear           | Running over SSH/headless session     | Run locally with display access                          |
-| VS Code import errors      | Wrong interpreter                     | Use Command Palette → **Select Interpreter** → venv path |
+```
+smart-class-planner/
+├── smart_class_planner/       # Main application
+│   ├── main.py               # Entry point
+│   ├── presentation/         # GUI (Tkinter)
+│   ├── application/          # Business logic
+│   ├── domain/               # Data models
+│   └── infrastructure/       # Parsers & scrapers
+├── tests/                    # Test suite
+├── docs/                     # Documentation
+├── requirements.txt          # Dependencies
+├── build_installer.bat       # Build script
+├── installer.iss            # Inno Setup config
+└── smart_class_planner.spec # PyInstaller config
+```
 
 ---
 
 ## References
 
-* **Python Tkinter Docs:** [https://docs.python.org/3/library/tkinter.html](https://docs.python.org/3/library/tkinter.html)
-* **PEP 8 Style Guide:** [https://peps.python.org/pep-0008/](https://peps.python.org/pep-0008/)
-* **pytest Documentation:** [https://docs.pytest.org/](https://docs.pytest.org/)
-* **BeautifulSoup4 Docs:** [https://www.crummy.com/software/BeautifulSoup/bs4/doc/](https://www.crummy.com/software/BeautifulSoup/bs4/doc/)
+- **GitHub Repository**: [https://github.com/AshleshaSingh/smart-class-planner](https://github.com/AshleshaSingh/smart-class-planner)
+- **Python Docs**: [https://docs.python.org/3/](https://docs.python.org/3/)
+- **PyInstaller**: [https://pyinstaller.org/](https://pyinstaller.org/)
+- **Inno Setup**: [https://jrsoftware.org/ishelp/](https://jrsoftware.org/ishelp/)
 
 ---
 
-## Summary
+## Quick Start
 
-You’re fully set when:
+**Developers:**
+```bash
+git clone https://github.com/AshleshaSingh/smart-class-planner.git
+cd smart-class-planner
+python -m venv venv
+source venv/bin/activate  # or venv\Scripts\activate on Windows
+pip install -r requirements.txt
+python setup_validator.py
+python -m smart_class_planner.main
+```
 
-1. python setup_validator.py → passes all checks
-2. python -m smart_class_planner.main → launches the GUI
-3. Excel plan is generated successfully
+**End Users (Windows):**
+1. Download `SmartClassPlanner_Setup_1.0.0.exe`
+2. Run installer
+3. Launch from Start Menu
 
+---
+
+Developed by Smart Class Planner Team | CS Software Design & Development | Fall 2025
