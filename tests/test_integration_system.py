@@ -23,9 +23,6 @@ import smart_class_planner.main as main
 
 from smart_class_planner.domain.repository import Repository
 from smart_class_planner.infrastructure.pdf_parser import PDFParser
-from smart_class_planner.infrastructure.study_plan_parser import StudyPlanParser
-from smart_class_planner.infrastructure.program_map_scraper import ProgramMapScraper
-from smart_class_planner.infrastructure.scraper import PrerequisiteScraper
 from smart_class_planner.application.plan_generator import PlanGenerator
 from smart_class_planner.presentation.excel_exporter import ExcelExporter
 
@@ -57,36 +54,7 @@ def test_end_to_end_planning_pipeline(tmp_path):
     except Exception as e:
         print(f"PDF parsing skipped: {e}")
 
-    # Study Plan Parser
-    try:
-        study_parser = StudyPlanParser()
-        study_plan = study_parser.parse(study_path)
-        repo.set_study_plan(study_plan)
-    except Exception as e:
-        print(f"Study Plan parsing skipped: {e}")
-
-    # Schedule Parser
-    try:
-        schedule_parser = ProgramMapScraper()
-        offerings = schedule_parser.parse(schedule_path)
-        for offering in offerings:
-            repo.add_offering(offering)
-    except Exception as e:
-        print(f"Schedule parsing skipped: {e}")
-
-    # Prerequisite Scraper
-    try:
-        prereq_scraper = PrerequisiteScraper()
-        prereqs = prereq_scraper.parse()
-        for p in prereqs:
-            repo.add_prerequisite(p)
-    except Exception as e:
-        print(f"Prereq scraping skipped: {e}")
-
-    print(
-        f"Repository populated with {len(repo.courses)} courses, "
-        f"{len(repo.offerings)} offerings, and {len(repo.prerequisites)} prereqs."
-    )
+    
 
     # Step 2 — Generate plan
     generator = PlanGenerator(repo)

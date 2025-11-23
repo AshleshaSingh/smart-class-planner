@@ -372,6 +372,12 @@ class TestValidatorIntegration:
         assert order[0] == "CPSC 6000"
         assert order[-1] == "CPSC 6300"
 
+def test_detect_circular_prerequisite():
+    """Test-to-fail: simulate circular dependency."""
+    prereq = Prerequisite("CPSC6106", "CPSC6105")
+    assert prereq.course_code == "CPSC6106"
+    assert prereq.prereq_course_code == "CPSC6105"
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
